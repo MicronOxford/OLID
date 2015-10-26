@@ -32,10 +32,10 @@ javabridge.start_vm(class_path=bioformats.JARS)
 log4j.basic_config() 
 
 
-# filename = '2015-09-A-C127_VimN205S_post20min_2x50nM_3_R3D.dv'
-# filename = '2015-09-A-C127_VimN205S_post20min_2x50nM_6_R3D.dv'
-# filename = '2015-09-A-C127_VimN205S_post20min_2x50nM_10_R3D.dv'
-filename = '2015-09-A-C127_VimN205S_post20min_2x50nM_9_R3D.dv'
+# filename = 'data/2015-09-A-C127_VimN205S_post20min_2x50nM_3_R3D.dv'
+# filename = 'data/2015-09-A-C127_VimN205S_post20min_2x50nM_6_R3D.dv'
+# filename = 'data/2015-09-A-C127_VimN205S_post20min_2x50nM_10_R3D.dv'
+filename = 'data/2015-09-A-C127_VimN205S_post20min_2x50nM_9_R3D.dv'
 corr_threshold = 0.7
 
 
