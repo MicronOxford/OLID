@@ -105,31 +105,47 @@ javabridge.kill_vm()
 
 
 '''plotting'''
-fig = pyplot.figure(1, figsize=(12,6))
+fig = pyplot.figure(1, figsize=(12,3))
+
+ncols = 4 # number of subplots
+nrows = 1
+spacing = 0.15
+spacingx = spacing / ncols
+spacingy = spacing / nrows
+lengthx = (1.0-(ncols+1)*spacingx)/ncols 
+lengthy = (1.0-(nrows+1)*spacingy)/nrows
 
 # plot sum image
-ax1 = pyplot.subplot(141)
+x1 = 0+spacingx
+y1 = 0+spacingy
+ax1 = fig.add_axes([x1, y1, lengthx, lengthy])
 imgplot = ax1.imshow(np.reshape(np.mean(Ipxtimeseries,axis=1), (nx,ny)), interpolation='none')
 imgplot.set_cmap('gray')
 pyplot.xticks([])
 pyplot.yticks([])
 
+
 # plot selection
-ax2 = pyplot.subplot(142)
+x2 = (spacingx+lengthx) + x1
+y2 = y1
+ax2 = fig.add_axes([x2, y2, lengthx, lengthy])
 imgplot = ax2.imshow(np.reshape(np.mean(REFpxtimeseries,axis=1), (RS.dims[0],RS.dims[1])), interpolation='none')
 pyplot.xticks([])
 pyplot.yticks([])
 
-# ax3 = pyplot.subplot(143, aspect='equal')
 pyplot.rc('xtick', labelsize='6', direction='in')
 pyplot.rc('ytick', labelsize='6', direction='in')
-ax3 = fig.add_subplot(143)
+x3 = (spacingx+lengthx) + x2
+y3 = y2
+ax3 = fig.add_axes([x3, y3, lengthx, lengthy])
 REFplot = ax3.plot(REF)
-ax3.set_aspect(1./ax3.get_data_ratio())
+# ax3.set_aspect(1./ax3.get_data_ratio())
 
 # plot corr
-ax4 = pyplot.subplot(144)
-corrplot = ax4.imshow(Icorr, interpolation='none')
+x4 = (spacingx+lengthx) + x3
+y4 = y3
+ax4 = fig.add_axes([x4, y4, lengthx, lengthy])
+corrplot = ax4.imshow(Icorr, aspect='auto', interpolation='none')
 corrplot.set_cmap('gray')
 pyplot.xticks([])
 pyplot.yticks([])
