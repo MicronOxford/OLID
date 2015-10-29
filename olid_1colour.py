@@ -105,10 +105,9 @@ javabridge.kill_vm()
 
 
 '''plotting'''
-fig = pyplot.figure(1, figsize=(12,3))
+fig = pyplot.figure(1, figsize=(12,3), frameon=False)
 fig.width = 12.0
 fig.height = 3.0
-
 
 ncols = 4 # number of subplots
 nrows = 1
@@ -127,7 +126,6 @@ imgplot.set_cmap('gray')
 pyplot.xticks([])
 pyplot.yticks([])
 
-
 # plot selection
 x2 = (spacingx+lengthx) + x1
 y2 = y1
@@ -136,6 +134,7 @@ imgplot = ax2.imshow(np.reshape(np.mean(REFpxtimeseries,axis=1), (RS.dims[0],RS.
 pyplot.xticks([])
 pyplot.yticks([])
 
+# plot ref waveform
 pyplot.rc('xtick', labelsize='6', direction='in')
 pyplot.rc('ytick', labelsize='6', direction='in')
 x3 = (spacingx+lengthx) + x2
