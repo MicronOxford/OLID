@@ -106,6 +106,9 @@ javabridge.kill_vm()
 
 '''plotting'''
 fig = pyplot.figure(1, figsize=(12,3))
+fig.width = 12.0
+fig.height = 3.0
+
 
 ncols = 4 # number of subplots
 nrows = 1
@@ -139,15 +142,25 @@ x3 = (spacingx+lengthx) + x2
 y3 = y2
 ax3 = fig.add_axes([x3, y3, lengthx, lengthy])
 REFplot = ax3.plot(REF)
-# ax3.set_aspect(1./ax3.get_data_ratio())
+ax3.set_aspect(1./ax3.get_data_ratio())
 
 # plot corr
 x4 = (spacingx+lengthx) + x3
 y4 = y3
 ax4 = fig.add_axes([x4, y4, lengthx, lengthy])
-corrplot = ax4.imshow(Icorr, aspect='auto', interpolation='none')
+corrplot = ax4.imshow(Icorr, interpolation='none')
 corrplot.set_cmap('gray')
 pyplot.xticks([])
 pyplot.yticks([])
+
+def onresize(event):
+	width = fig.get_figwidth() -0.125
+	height = fig.get_figheight() -0.125
+	if width/height < fig.width/fig.height:
+		# fig.set_figwidth(height*fig.width/fig.height+0.00001)
+		fig.set_figheight(width*fig.height/fig.width-0.00001)
+	# ax = fig.get_axes()
+
+cid = fig.canvas.mpl_connect('resize_event', onresize)
 
 pyplot.show()
