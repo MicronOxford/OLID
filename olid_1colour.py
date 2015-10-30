@@ -5,9 +5,7 @@ This script reads a (x,y,t) .dv file and lets the user select a region of intere
 '''
 import matplotlib.pyplot as pyplot
 from matplotlib.widgets import RectangleSelector
-import pylab
 import numpy as np
-import time
 from filehandling import *
 
 # filename = 'data/2015-09-A-C127_VimN205S_post20min_2x50nM_3_R3D.dv'
