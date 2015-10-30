@@ -8,9 +8,7 @@ from matplotlib.widgets import RectangleSelector
 import pylab
 import numpy as np
 import time
-import javabridge
-import bioformats
-from bioformats import log4j
+from filehandling import *
 
 # filename = 'data/2015-09-A-C127_VimN205S_post20min_2x50nM_3_R3D.dv'
 # filename = 'data/2015-09-A-C127_VimN205S_post20min_2x50nM_6_R3D.dv'
@@ -19,25 +17,7 @@ filename = 'data/2015-09-A-C127_VimN205S_post20min_2x50nM_9_R3D.dv'
 corr_threshold = 0.7
 timepts = [] # set time points used for correlation, use all if empty
 
-def readfile(filename):
-	# read metadata
-	metadata = bioformats.get_omexml_metadata(filename)
-	xml = bioformats.OMEXML(metadata)
-	Pixels = xml.image().Pixels
-	nx, ny, nz, nt = Pixels.SizeX, Pixels.SizeY, Pixels.SizeZ, Pixels.SizeT
 
-	# read image data
-	image4d = np.zeros(shape=(nx,ny,nz,nt))
-	reader = bioformats.ImageReader(filename)
-	for t in range(nt):
-		for z in range(nz):
-			image4d[:,:,z,t] = reader.read(z=z, t=t, rescale=False)
-
-	return image4d
-
-def writefile(filename, image):
-	# write image data
-	bioformats.write_image(filename, image, pixel_type=bioformats.omexml.PT_UINT16)
 
 def onselect(eclick, erelease):
 	'eclick and erelease are matplotlib events at press and release'
@@ -57,8 +37,7 @@ def onselect(eclick, erelease):
 	except:
 		return
 
-javabridge.start_vm(class_path=bioformats.JARS)
-log4j.basic_config() 
+start_java_bridge()
 image4d = readfile(filename)
 
 [nx, ny, nz, nt] = image4d.shape
@@ -101,7 +80,7 @@ corr[corr<corr_threshold] = 0
 Icorr = np.reshape(np.mean(Ipxtimeseries,axis=1)*corr, (nx,ny))
 
 writefile(filename[:-3]+'.tiff', Icorr)
-javabridge.kill_vm()
+end_java_bridge()
 
 
 '''plotting'''
