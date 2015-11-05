@@ -8,97 +8,100 @@ from matplotlib.widgets import RectangleSelector
 import numpy as np
 from filehandling import *
 
-# filename = 'data/2015-09-A-C127_VimN205S_post20min_2x50nM_3_R3D.dv'
+filename = 'data/2015-09-A-C127_VimN205S_post20min_2x50nM_3_R3D.dv'
 # filename = 'data/2015-09-A-C127_VimN205S_post20min_2x50nM_6_R3D.dv'
 # filename = 'data/2015-09-A-C127_VimN205S_post20min_2x50nM_10_R3D.dv'
-filename = 'data/2015-09-A-C127_VimN205S_post20min_2x50nM_9_R3D.dv'
-corr_threshold = 0.7
-timepts = [] # set time points used for correlation, use all if empty
-
+# filename = 'data/2015-09-A-C127_VimN205S_post20min_2x50nM_9_R3D.dv'
+corr_threshold = 0.0  # 0.7
+timepts = []  # set time points used for correlation, use all if empty
 
 
 def onselect(eclick, erelease):
-	'eclick and erelease are matplotlib events at press and release'
-	if eclick.xdata < erelease.xdata:
-		xstart, xend = eclick.xdata, erelease.xdata
-	elif eclick.xdata > erelease.xdata:
-		xend, xstart = eclick.xdata, erelease.xdata
+    'eclick and erelease are matplotlib events at press and release'
+    if eclick.xdata < erelease.xdata:
+        xstart, xend = eclick.xdata, erelease.xdata
+    elif eclick.xdata > erelease.xdata:
+        xend, xstart = eclick.xdata, erelease.xdata
 
-	if eclick.ydata < erelease.ydata:
-		ystart, yend = eclick.ydata, erelease.ydata
-	elif eclick.ydata > erelease.ydata:
-		yend, ystart = eclick.ydata, erelease.ydata	
+    if eclick.ydata < erelease.ydata:
+        ystart, yend = eclick.ydata, erelease.ydata
+    elif eclick.ydata > erelease.ydata:
+        yend, ystart = eclick.ydata, erelease.ydata
+    try:
+        # image and plot reverse axes
+        RS.coords = np.array([ystart, xstart, yend, xend])
+        pyplot.close()
+    except:
+        return
 
-	try:
-		RS.coords = np.array([ystart, xstart, yend, xend]) # image and plot reverse axes
-		pyplot.close()
-	except:
-		return
 
 start_java_bridge()
 image4d = readfile(filename)
 
 [nx, ny, nz, nt] = image4d.shape
 if timepts == []:
-	timepts = range(0,nt) # set time points used for correlation
+    timepts = range(0, nt)  # set time points used for correlation
 
 
 ''' select area used as reference waveform '''
 fig = pyplot.figure(2)
 ax = pyplot.gca()
-REFimg = ax.imshow(np.mean(image4d[:,:,0,:],axis=2), interpolation='none')
+REFimg = ax.imshow(np.mean(image4d[:, :, 0, :], axis=2), interpolation='none')
 RS = RectangleSelector(ax, onselect)
-RS.coords = np.array([0,0,ny-1,nx-1]) # image and plot reverse axes
+RS.coords = np.array([0, 0, ny-1, nx-1])  # image and plot reverse axes
 pyplot.show()
 
 RS.coords = RS.coords.astype(int)
 RS.dims = np.array([RS.coords[2]-RS.coords[0], RS.coords[3]-RS.coords[1]])
 
 # generate signal wave
-Ipxtimeseries = np.reshape(image4d[:,:,0,:], (nx*ny,nt))
-I = Ipxtimeseries[:,timepts]
+Ipxtimeseries = np.reshape(image4d[:, :, 0, :], (nx*ny, nt))
+I = Ipxtimeseries[:, timepts]
 mI = np.mean(I, axis=1)
 sI = np.std(I, axis=1)
 
 # generate reference wave
-REFimg = image4d[RS.coords[0]:RS.coords[2],RS.coords[1]:RS.coords[3],0,:]
-REFpxtimeseries = np.reshape(REFimg, (RS.dims[0]*RS.dims[1],nt))
+REFimg = image4d[RS.coords[0]:RS.coords[2], RS.coords[1]:RS.coords[3], 0, :]
+REFpxtimeseries = np.reshape(REFimg, (RS.dims[0]*RS.dims[1], nt))
 # REF = np.percentile(REFpxtimeseries[:,timepts], 90, axis=0)
-REF = np.mean(REFpxtimeseries[:,timepts], axis=0)
+REF = np.mean(REFpxtimeseries[:, timepts], axis=0)
 mREF = np.mean(REF, axis=0)
 sREF = np.std(REF, axis=0)
 
 ''' calculate correlation corr(x,y) '''
 corr = np.zeros(I.shape[0])
 for t in range(I.shape[1]):
-	corr += (I[:,t]-mI)*(REF[t]-mREF)/(sI*sREF)
+    corr += (I[:, t]-mI)*(REF[t]-mREF)/(sI*sREF)
 corr /= I.shape[1]
-corr[corr<corr_threshold] = 0
+corr[corr < corr_threshold] = 0
 
-Icorr = np.reshape(np.mean(Ipxtimeseries,axis=1)*corr, (nx,ny))
+Icorr = np.reshape(np.mean(Ipxtimeseries, axis=1)*corr, (nx, ny))
+corr = np.reshape(corr, (nx, ny))
 
+writefile(filename[:-3]+'_corr.tiff', 1000*corr)
 writefile(filename[:-3]+'.tiff', Icorr)
 end_java_bridge()
 
 
 '''plotting'''
-fig = pyplot.figure(1, figsize=(12,3), frameon=False)
+fig = pyplot.figure(1, figsize=(12, 3), frameon=False)
 fig.width = 12.0
 fig.height = 3.0
 
-ncols = 4 # number of subplots
+ncols = 4  # number of subplots
 nrows = 1
 spacing = 0.15
 spacingx = spacing / ncols
 spacingy = spacing / nrows
-lengthx = (1.0-(ncols+1)*spacingx)/ncols 
+lengthx = (1.0-(ncols+1)*spacingx)/ncols
 lengthy = (1.0-(nrows+1)*spacingy)/nrows
 
 # plot sum image
 x1 = 0+spacingx
 y1 = 0+spacingy
 ax1 = fig.add_axes([x1, y1, lengthx, lengthy])
-imgplot = ax1.imshow(np.reshape(np.mean(Ipxtimeseries,axis=1), (nx,ny)), interpolation='none')
+imgplot = ax1.imshow(np.reshape(np.mean(Ipxtimeseries, axis=1),
+                                (nx, ny)), interpolation='none')
 imgplot.set_cmap('gray')
 pyplot.xticks([])
 pyplot.yticks([])
@@ -107,7 +110,9 @@ pyplot.yticks([])
 x2 = (spacingx+lengthx) + x1
 y2 = y1
 ax2 = fig.add_axes([x2, y2, lengthx, lengthy])
-imgplot = ax2.imshow(np.reshape(np.mean(REFpxtimeseries,axis=1), (RS.dims[0],RS.dims[1])), interpolation='none')
+imgplot = ax2.imshow(
+    np.reshape(np.mean(REFpxtimeseries, axis=1), (RS.dims[0], RS.dims[1])),
+    interpolation='none')
 pyplot.xticks([])
 pyplot.yticks([])
 
@@ -129,13 +134,12 @@ corrplot.set_cmap('gray')
 pyplot.xticks([])
 pyplot.yticks([])
 
+
 def onresize(event):
-	width = fig.get_figwidth() -0.125
-	height = fig.get_figheight() -0.125
-	if width/height < fig.width/fig.height:
-		# fig.set_figwidth(height*fig.width/fig.height+0.00001)
-		fig.set_figheight(width*fig.height/fig.width-0.00001)
-	# ax = fig.get_axes()
+    width = fig.get_figwidth() - 0.125
+    height = fig.get_figheight() - 0.125
+    if width/height < fig.width/fig.height:
+        fig.set_figheight(width*fig.height/fig.width-0.00001)
 
 cid = fig.canvas.mpl_connect('resize_event', onresize)
 
