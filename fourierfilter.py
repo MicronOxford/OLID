@@ -9,7 +9,7 @@ weighed image is stored as a .tiff file.
 """
 
 import matplotlib.pyplot as pyplot
-# from matplotlib.widgets import RectangleSelector
+from matplotlib.widgets import RectangleSelector
 import numpy as np
 from filehandling import *
 
@@ -51,17 +51,14 @@ freqdisp = np.fft.fftshift(freq)
 freqdisp = np.abs(freqdisp)
 freqdisp = np.sum(freqdisp, axis=0)
 freqdisp = np.log(freqdisp)
-# freqslicedisp = np.fft.ifftshift(freqslice)
-freqslicedisp = np.abs(freqslice[:, :, 0])
-
 
 fig1 = pyplot.figure(1)
 ax1 = fig1.add_subplot(121)
 ax1.data = freqdisp
 ax1.nt = nt
-# ax1.set_ylabel('time')
 ax2 = fig1.add_subplot(122)
 ax2.slice = 0
+# ax2.slice = [0, 1]
 ax2.data = freqslice
 ax2.nt = nt
 
@@ -73,36 +70,37 @@ def plot_freq(ax):
     ax.set_xlabel('y')
     ax.set_ylabel('time frequency')
     fmax = np.floor((ax.nt-1)/2.0)
-    print ax.get_yticks()
-    # idx_label = np.arange(fmin, fmax, 5).astype(str).tolist()
     n = 20
     idx_label = np.arange(0, fmax, n)
     idx_label = np.append(-idx_label[-1:0:-1], idx_label).astype(str).tolist()
-    # idx = np.arange(0, ax.nt, 5).tolist()
     step = ax.nt/len(idx_label)
     idx = np.arange(step/2, ax.nt, step).tolist()
-    print idx
-    # print idx.astype(str)
     ax.set_yticks(idx)
     ax.set_yticklabels(idx_label)
-    # ax.set_yticks([0, 1.4, 88])
-    # # print idx[::10]
     # pyplot.draw()
 
 
 def plot_freqslice(ax):
     idx = np.fft.fftshift(range(0, ax.nt))
     fmin = -np.ceil((ax.nt-1)/2.0)
-    sliceidx = idx[-fmin+ax.slice]
-    freqslicedisp = np.abs(ax.data[:, :, sliceidx])
+    sliceidx = idx[(-fmin+ax.slice).tolist()]
+    freqslicedisp = np.squeeze(np.abs(ax.data[:, :, sliceidx]))
+    if np.ndim(freqslicedisp) > 2:
+        freqslicedisp = np.sum(freqslicedisp, axis=2)
+        title = 'Slice frequency: %.3f' % np.fft.fftfreq(ax.nt)[sliceidx[0]]
+        title = title + ' to %.3f' % np.fft.fftfreq(ax.nt)[sliceidx[-1]]
+    else:
+        title = 'Slice frequency: %.3f' % np.fft.fftfreq(ax.nt)[sliceidx]
     ax.clear()
     ax.imshow(freqslicedisp, cmap='hot')
-    ax.set_title('Slice frequency: %.3f' % np.fft.fftfreq(ax.nt)[sliceidx])
+    ax.set_title(title)
     pyplot.draw()
 
 
 def onscroll(event):
     ax = fig1.get_axes()[-1]
+    if len(ax.slice) is not 1:
+        return
     fmin = -np.ceil((ax.nt-1)/2.0)
     fmax = np.floor((ax.nt-1)/2.0)
     if (ax.slice + event.step) < fmin:
@@ -119,9 +117,33 @@ def onscroll(event):
         ax.slice += event.step
     plot_freqslice(ax)
 
+
+# def onclick(event):
+#     if event.inaxes is not fig1.get_axes()[0]:
+#         return
+#     if (event.xdata is None) and (event.ydata is None):
+#         return
+#     ax = fig1.get_axes()[-1]
+#     fmin = -np.ceil((ax.nt-1)/2.0)
+#     ax.slice = int(event.ydata)+fmin
+    # plot_freqslice(ax)
+
+
+def onselect(eclick, erelease):
+    ystart, yend = int(eclick.ydata), int(erelease.ydata)
+    # if ystart is yend:
+    #     return
+    if ystart > yend:
+        ystart, yend = yend, ystart
+    ax = fig1.get_axes()[-1]
+    fmin = -np.ceil((ax.nt-1)/2.0)
+    ax.slice = np.arange(ystart, yend+1) + fmin
+    plot_freqslice(ax)
+
 plot_freq(ax1)
 plot_freqslice(ax2)
 cid = fig1.canvas.mpl_connect('scroll_event', onscroll)
-
-
+# cid = fig1.canvas.mpl_connect('button_press_event', onclick)
+lineprops = dict(color='green', linestyle='-', linewidth=5, alpha=0.5)
+RS = RectangleSelector(ax1, onselect,  drawtype='line', lineprops=lineprops)
 pyplot.show()
