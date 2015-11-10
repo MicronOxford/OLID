@@ -13,10 +13,10 @@ from matplotlib.widgets import RectangleSelector
 import numpy as np
 from filehandling import *
 
-# filename = 'data/2015-09-A-C127_VimN205S_post20min_2x50nM_3_R3D.dv'
+filename = 'data/2015-09-A-C127_VimN205S_post20min_2x50nM_3_R3D.dv'
 # filename = 'data/2015-09-A-C127_VimN205S_post20min_2x50nM_6_R3D.dv'
 # filename = 'data/2015-09-A-C127_VimN205S_post20min_2x50nM_10_R3D.dv'
-filename = 'data/2015-09-A-C127_VimN205S_post20min_2x50nM_9_R3D.dv'
+# filename = 'data/2015-09-A-C127_VimN205S_post20min_2x50nM_9_R3D.dv'
 
 
 start_java_bridge()
@@ -57,10 +57,12 @@ ax1 = fig1.add_subplot(121)
 ax1.data = freqdisp
 ax1.nt = nt
 ax2 = fig1.add_subplot(122)
-ax2.slice = 0
+ax2.slice = [0]
 # ax2.slice = [0, 1]
 ax2.data = freqslice
 ax2.nt = nt
+
+ax2.slice = np.asarray(ax2.slice)
 
 
 def plot_freq(ax):
@@ -99,7 +101,7 @@ def plot_freqslice(ax):
 
 def onscroll(event):
     ax = fig1.get_axes()[-1]
-    if len(ax.slice) is not 1:
+    if np.size(ax.slice) is not 1:
         return
     fmin = -np.ceil((ax.nt-1)/2.0)
     fmax = np.floor((ax.nt-1)/2.0)
@@ -107,12 +109,12 @@ def onscroll(event):
         if ax.slice == fmin:
             return
         else:
-            ax.slice = fmin
+            ax.slice[0] = fmin
     elif fmax < (ax.slice + event.step):
         if ax.slice == fmax:
             return
         else:
-            ax.slice = fmax
+            ax.slice[0] = fmax
     else:
         ax.slice += event.step
     plot_freqslice(ax)
