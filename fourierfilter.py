@@ -14,14 +14,21 @@ import numpy as np
 from filehandling import *
 
 # filename = 'data/2015-09-A-C127_VimN205S_post20min_2x50nM_3_R3D.dv'
-filename = 'data/2015-09-A-C127_VimN205S_post20min_2x50nM_6_R3D.dv'
+# filename = 'data/2015-09-A-C127_VimN205S_post20min_2x50nM_6_R3D.dv'
 # filename = 'data/2015-09-A-C127_VimN205S_post20min_2x50nM_10_R3D.dv'
 # filename = 'data/2015-09-A-C127_VimN205S_post20min_2x50nM_9_R3D.dv'
+filename = 'data/C127_pKer_RSEGF2_1ms10pct405nm_4ms10pct488nm_20151023_Fri-1630.dv'
 
 
 start_java_bridge()
 image4d, metaxml = readfile(filename)
-imagexyt = image4d[:, :, 0, :]
+# imagexyt = image4d[:, :, 0, :]
+
+Pixels = metaxml.image().Pixels
+nx, ny, nz, nt = Pixels.SizeX, Pixels.SizeY, Pixels.SizeZ, Pixels.SizeT
+imagexyt = image4d.reshape((nx, ny, nz*nt))
+imagexyt = imagexyt[:, :, :99]
+print imagexyt.shape
 
 # 3D Fourier Transform
 freq = np.fft.fftn(imagexyt, axes=(0, 1, 2))
@@ -32,8 +39,10 @@ freqslice = np.zeros((nx, ny, nt), dtype=np.complex)
 for i in range(0, nt):
     freqslice[:, :, i] = np.fft.ifft2(freq[:, :, i])
 
-exptime = metaxml.image().Pixels.Plane(0).ExposureTime
 
+exptime = metaxml.image().Pixels.Plane(0).ExposureTime
+if exptime == 0:
+    exptime = 1
 
 # freqslice = np.fft.fftshift(freqslice)
 # writefile(filename[:-3]+'_FT2.tiff', np.abs(freqslice))
@@ -54,6 +63,7 @@ freqdisp = np.log(freqdisp)
 
 fig1 = pyplot.figure(1)
 ax3 = fig1.add_axes([0.9, 0.05, 0.09, 0.05])  # save button
+ax4 = fig1.add_axes([0.8, 0.05, 0.09, 0.05])  # save button
 ax1 = fig1.add_subplot(121)
 ax1.data = freqdisp
 ax1.nt = nt
@@ -136,13 +146,28 @@ def onselect(eclick, erelease):
 
 
 def save_img(event):
-    print 'hi'
     ax = fig1.get_axes()[-1]
-    if np.size(ax.slice) is not 1:
+    idx = np.fft.fftshift(range(0, ax.nt))
+    fmin = -np.ceil((ax.nt-1)/2.0)
+    sliceidx = idx[(-fmin+ax.slice).tolist()]
+    freqslicedisp = np.squeeze(np.abs(ax.data[:, :, sliceidx]))
+    if ax.slice.size > 1:
+        print 'Multiple slice saving not implemented yet.'
+        print 'Please select single slice.'
         return
-    savename = filename[:-3] + ''
-    writefile(savename, (ax.data).transpose())
-    return
+    savename = filename[:-3]
+    savename += '_%05.dmHz.tiff' % (1000*ax.frequencies[sliceidx])
+    writefile(savename, freqslicedisp)
+    print 'Frequency %.1f Hz saved as %s' % (1000*ax.frequencies[sliceidx], savename)
+
+
+def save_fftstack(event):
+    ax = fig1.get_axes()[-1]
+    data = np.abs(ax.data)
+    savename = filename[:-3] + '_fftslices.tiff'
+    writefile(savename, data, t=3, size_t=ax.nt)
+    print 'Saved stack to %s' % savename
+
 
 plot_freq(ax1)
 plot_freqslice(ax2)
@@ -153,6 +178,8 @@ RS = RectangleSelector(ax1, onselect,  drawtype='line', lineprops=lineprops)
 
 save_ax2 = Button(ax3, 'save slice')
 save_ax2.on_clicked(save_img)
+save_fftstack_button = Button(ax4, 'save stack')
+save_fftstack_button.on_clicked(save_fftstack)
 
 pyplot.show()
 end_java_bridge()
