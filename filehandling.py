@@ -29,18 +29,30 @@ def readfile(filename):
         for z in range(nz):
             image4d[:, :, z, t] = reader.read(z=z, t=t, rescale=False)
 
-    return image4d
+    return image4d, xml
 
 
-def writefile(filename, image):
+def writefile(filename,
+              image,
+              c=0,
+              z=0,
+              t=0,
+              size_c=1,
+              size_z=1,
+              size_t=1,
+              channel_names=None):
     # write image data
     # if file exists already, we have to remove it to prevent java error of
     # unmatching pixel dimensions
     if os.path.isfile(filename):
         os.remove(filename)
-    bioformats.write_image(
-        filename, image.astype(ome.PT_FLOAT), pixel_type=ome.PT_FLOAT)
-
-
-if __name__ == '__main__':
-    main()
+    bioformats.write_image(filename,
+                           image.astype(ome.PT_FLOAT),
+                           pixel_type=ome.PT_FLOAT,
+                           c=c,
+                           z=z,
+                           t=t,
+                           size_c=size_c,
+                           size_z=size_z,
+                           size_t=size_t,
+                           channel_names=channel_names)
