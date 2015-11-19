@@ -19,7 +19,8 @@ filename = 'data/2015-09-A-C127_VimN205S_post20min_2x50nM_3_R3D.dv'
 # # filename = 'data/2015-09-A-C127_VimN205S_post20min_2x50nM_9_R3D.dv'
 # filename = 'data/C127_pKer_RSEGF2_1ms10pct405nm_4ms10pct488nm_20151023_Fri-1630.dv'
 # filename = 'data/C127_pKer_RSEGF2_1ms10pct405nm_5ms10pct488nm_20151023_Fri-1558.dv'
-
+# filename = 'data/2015-09-A-C127_VimN205S_pre_3_R3D.dv'
+# filename = 'data/04_20x_1ms10pc405_20x2ms1pct488_20151119_Thu-1907.dv'
 
 start_java_bridge()
 image4d, metaxml = readfile(filename)
@@ -27,9 +28,8 @@ image4d, metaxml = readfile(filename)
 
 Pixels = metaxml.image().Pixels
 nx, ny, nz, nt = Pixels.SizeX, Pixels.SizeY, Pixels.SizeZ, Pixels.SizeT
-imagexyt = image4d.reshape((nx, ny, nz*nt))
+imagexyt = image4d.reshape((nx, ny, nz*nt), order='F')
 imagexyt = imagexyt[:, :, :]
-
 
 # 3D Fourier Transform
 freq = np.fft.fftn(imagexyt, axes=(0, 1, 2))
@@ -44,7 +44,6 @@ for i in range(0, nt):
 exptime = metaxml.image().Pixels.Plane(0).ExposureTime
 if exptime == 0:
     exptime = 1.0/nt
-
 
 " plotting "
 # prepare for plotting
