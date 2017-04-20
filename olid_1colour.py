@@ -36,7 +36,7 @@ def onselect(eclick, erelease):
 
 
 start_java_bridge()
-image4d = readfile(filename)
+image4d, xml = readfile(filename)
 
 [nx, ny, nz, nt] = image4d.shape
 if timepts == []:
